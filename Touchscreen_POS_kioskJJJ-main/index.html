@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#aee2f6" />
+    <title>Campus Corner · Touchscreen POS</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Fredoka+One&family=JetBrains+Mono:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+
+    <link rel="stylesheet" href="css/styles.css" />
+    <script defer src="js/data.js"></script>
+    <script defer src="js/format.js"></script>
+    <script defer src="js/order.js"></script>
+    <script defer src="js/views.js"></script>
+    <script defer src="js/app.js"></script>
+  </head>
+  <body>
+    <div class="shell">
+      <header class="topbar">
+        <div class="brand">
+          <div class="brand-icon" aria-hidden="true">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 32 32"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.8"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <path d="M6 10h20l-2 18H8L6 10Zm6 2V7a4 4 0 0 1 8 0v5" />
+            </svg>
+          </div>
+          <div>
+            <div class="brand-name">
+              TRIPLE J corner<span class="brand-accent">.</span>
+            </div>
+            <div class="eyebrow">Good food. Campus essentials.</div>
+          </div>
+        </div>
+        <div class="top-note">
+          <span class="dot"></span>Self-service kiosk
+          <span class="top-note-divider">/</span> Take your time, make it yours.
+        </div>
+      </header>
+      <ol class="progress" aria-label="Transaction progress" id="progress"></ol>
+      <main id="app"></main>
+      <footer class="footer">
+        <span>CAMPUS CORNER · FOOD & MERCHANDISE</span
+        ><span>Tap. Pay. Enjoy.</span>
+      </footer>
+    </div>
+    <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
+  </body>
+</html>

@@ -1,0 +1,17 @@
+{
+  "name": "touchscreen-pos-kiosk",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "start": "node scripts/serve.cjs",
+    "dev": "node scripts/serve.cjs",
+    "test": "node --test tests/order.test.cjs && playwright test",
+    "build": "node scripts/build.cjs",
+    "format": "prettier --write index.html css js scripts tests package.json playwright.config.cjs README.md",
+    "format:check": "prettier --check index.html css js scripts tests package.json playwright.config.cjs README.md"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.63.0",
+    "prettier": "3.9.9"
+  }
+}
