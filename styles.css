@@ -1727,3 +1727,26 @@ main > .selection-layout {
   margin-left: auto;
   margin-right: auto;
 }
+
+/* Customer feedback follows the kiosk's pastel panels and raised controls. */
+.feedback-screen { max-width: 680px; }
+.feedback-rating { border: 0; padding: 0; margin: 0 0 28px; min-width: 0; }
+.feedback-rating legend { font-weight: 600; margin-bottom: 16px; }
+.rating-options { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 10px; }
+.rating-option { position: relative; cursor: pointer; }
+.rating-option input { position: absolute; opacity: 0; width: 1px; height: 1px; }
+.rating-tile { display: flex; flex-direction: column; align-items: center; gap: 5px; padding: 14px 4px; border: 2px solid #e5dece; border-radius: 20px; background: #fffaf1; color: var(--ink); box-shadow: inset 0 2px 1px #fff, 0 3px 0 #d1c6b040; }
+.rating-star { font-size: 30px; line-height: 1; color: #a07939; }
+.rating-tile small { font-size: 12px; }
+.rating-option input:checked + .rating-tile { background: #ffe9b4; border-color: #b97840; box-shadow: inset 0 2px 1px #fff8, 0 4px 0 #d9b270; }
+.rating-option input:focus-visible + .rating-tile { outline: 2px solid #945033; outline-offset: 4px; }
+.feedback-comment { display: block; width: 100%; resize: vertical; min-height: 120px; margin-top: 10px; padding: 16px; border: 1.5px solid #c7bba7; border-radius: 22px; background: #fff; color: var(--ink); font: inherit; box-shadow: inset 0 3px 7px #a99b8422; }
+.feedback-comment:focus-visible { outline: 2px solid #945033; outline-offset: 4px; }
+.feedback-screen .error { margin-bottom: 18px; }
+@media (max-width: 480px) {
+  .rating-options { gap: 5px; }
+  .rating-tile { border-radius: 14px; padding: 12px 2px; }
+  .rating-tile small { font-size: 9px; }
+  .rating-star { font-size: 25px; }
+  .progress { flex-wrap: wrap; justify-content: center; gap: 10px; }
+}
