@@ -6,3 +6,6 @@ node_modules/
 test-results/
 playwright-report/
 supabase/.temp/
+
+dist/
+.vercel/

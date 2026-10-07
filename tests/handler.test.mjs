@@ -52,3 +52,12 @@ test('malformed JSON is rejected', async () => {
   const response=await handler(new Request('https://example.com/functions/v1/kiosk/checkout',{method:'POST',headers:{apikey:key,'Content-Type':'application/json'},body:'{'}));
   assert.equal(response.status,400);
 });
+
+const feedbackPayload={transactionNumber:'TXN-8A488B4C-7CA6-4E17-8824-AB3C91226FBA',rating:5,comment:' Helpful kiosk! '};
+const savedFeedback={transactionNumber:feedbackPayload.transactionNumber,rating:5,comment:'Helpful kiosk!',date:'2026-10-07T12:00:00Z'};
+test('feedback saves a rating and trimmed comment through the private RPC',async()=>{
+ const {handler,calls}=setup({ok:true,feedback:savedFeedback});const r=await handler(request('feedback',feedbackPayload));assert.equal(r.status,200);assert.deepEqual(await r.json(),{feedback:savedFeedback});assert.deepEqual(calls[0],{path:'rpc/kiosk_feedback',options:{method:'POST',body:{p_transaction_number:feedbackPayload.transactionNumber,p_rating:5,p_comment:'Helpful kiosk!'}}});
+});
+for(const [name,extra] of [['missing rating',{rating:null}],['string rating',{rating:'5'}],['low rating',{rating:0}],['high rating',{rating:6}],['fractional rating',{rating:2.5}],['long comment',{comment:'a'.repeat(501)}],['non-text comment',{comment:7}],['invalid receipt',{transactionNumber:'TXN-made-up'}]]) test('feedback rejects '+name+' before writing',async()=>{const {handler,calls}=setup();assert.equal((await handler(request('feedback',{...feedbackPayload,...extra}))).status,400);assert.equal(calls.length,0);});
+for(const [code,status] of [['ORDER_NOT_FOUND',404],['FEEDBACK_CONFLICT',409]])test('feedback maps '+code,async()=>{const {handler}=setup({ok:false,code,message:'Feedback error'});const r=await handler(request('feedback',feedbackPayload));assert.equal(r.status,status);assert.equal((await r.json()).error.code,code);});
+test('feedback failure never reports success or leaks database details',async()=>{const handler=createHandler({publishableKeys:[key],allowedOrigins:[],database:async()=>{throw Error('secret');}});const r=await handler(request('feedback',feedbackPayload,{Origin:''}));assert.equal(r.status,503);const data=await r.json();assert.equal(data.error.code,'FEEDBACK_UNCERTAIN');assert.ok(!data.error.message.includes('secret'));});

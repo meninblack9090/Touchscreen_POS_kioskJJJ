@@ -6,7 +6,7 @@ const secretKeys = JSON.parse(Deno.env.get('SUPABASE_SECRET_KEYS') || '{}');
 const backendKey = secretKeys.default || Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
 const url = Deno.env.get('SUPABASE_URL');
 const allowedOrigins = (Deno.env.get('KIOSK_ALLOWED_ORIGINS') ||
-  'http://localhost:4173,http://127.0.0.1:4173,http://localhost:5500,http://127.0.0.1:5500').split(',').map((s:string)=>s.trim()).filter(Boolean);
+  'http://localhost:4173,http://127.0.0.1:4173,http://localhost:5500,http://127.0.0.1:5500,https://triple-j-pos-kiosk.vercel.app,https://triple-j-pos-kiosk-mencedejeward-5545.vercel.app,https://triple-j-pos-kiosk-ei6r5ivl4-mencedejeward-5545.vercel.app').split(',').map((s:string)=>s.trim()).filter(Boolean);
 
 Deno.serve(createHandler({
   publishableKeys, allowedOrigins,

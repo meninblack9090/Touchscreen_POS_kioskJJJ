@@ -16,8 +16,8 @@
       });
       data=await response.json();
     } catch {
-      throw new APIError(body?'CHECKOUT_UNCERTAIN':'CATALOG_UNAVAILABLE',
-        body?'Unable to confirm payment. Retry this payment to recover its receipt.':'Products could not be loaded. Please retry.',!!body);
+      throw new APIError(path==='feedback'?'FEEDBACK_UNCERTAIN':body?'CHECKOUT_UNCERTAIN':'CATALOG_UNAVAILABLE',
+        path==='feedback'?'Unable to confirm feedback. Retry to recover your saved submission.':body?'Unable to confirm payment. Retry this payment to recover its receipt.':'Products could not be loaded. Please retry.',!!body);
     }
     if (!response.ok) {
       throw new APIError(data?.error?.code || 'BACKEND_ERROR', data?.error?.message || 'The backend could not complete this request.',
@@ -51,6 +51,15 @@
         throw new APIError('CATALOG_UNAVAILABLE','The product catalog is invalid. Please retry.');
       }
       return data.products;
+    },
+    async feedback(payload) {
+      const data=await request('feedback',payload);
+      const f=data?.feedback;
+      if (!f || f.transactionNumber!==payload.transactionNumber || f.rating!==payload.rating ||
+          f.comment!==payload.comment || !Number.isFinite(Date.parse(f.date))) {
+        throw new APIError('FEEDBACK_UNCERTAIN','Unable to verify saved feedback. Retry to recover your submission.',true);
+      }
+      return f;
     },
     async checkout(payload) {
       const data=await request('checkout',payload);

@@ -32,7 +32,7 @@
     method: null,
     cash: '',
     receipt: null,
-    feedback: { rating: '', comment: '', submitted: false, skipped: false },
+    feedback: { rating: '', comment: '', submitted: false, skipped: false, saving: false, attempt: null },
     busy: false,
     error: '',
     timer: null,
@@ -128,40 +128,34 @@
     if (f.submitted || f.skipped) {
       return `<section class="center-screen feedback-screen"><div class="center-intro"><div class="success-mark" aria-hidden="true">✓</div><div class="section-label">See you next time</div><h1>${f.submitted ? 'Thanks for your feedback!' : 'Thanks for stopping by!'}</h1><p class="muted">${f.submitted ? 'Your thoughts help make every campus visit a little better.' : 'Enjoy your order and have a great campus day.'}</p></div><div class="actions">${button('New Transaction →', 'reset', 'primary wide')}</div></section>`;
     }
-    return `<section class="center-screen feedback-screen"><div class="center-intro"><div class="section-label">A little feedback goes a long way</div><h1>How was your visit?</h1><p class="muted">Tell us about your kiosk experience.</p></div><form id="feedback-form" class="panel" novalidate><fieldset class="feedback-rating"><legend>Rate your experience</legend><div class="rating-options">${['Poor', 'Fair', 'Good', 'Great', 'Excellent'].map((label, i) => `<label class="rating-option"><input type="radio" name="rating" value="${i + 1}" ${f.rating === String(i + 1) ? 'checked' : ''} aria-describedby="feedback-error"><span class="rating-tile"><span class="rating-star" aria-hidden="true">★</span><strong>${i + 1}</strong><small>${label}</small></span></label>`).join('')}</div></fieldset><label class="input-label" for="feedback-comment">Anything else to share? <span class="muted">(optional)</span></label><textarea id="feedback-comment" name="comment" class="feedback-comment" rows="4" maxlength="500" placeholder="What went well? What could be better?" aria-describedby="feedback-help">${escape(f.comment)}</textarea><p id="feedback-help" class="cash-help">Up to 500 characters. Please avoid sharing personal details.</p><div id="feedback-error" class="error" role="alert" ${state.error ? '' : 'hidden'}>${escape(state.error)}</div><button type="submit" class="btn primary wide">Submit Feedback →</button></form><div class="actions">${button('← Back to Receipt', 'feedback-receipt', 'secondary')}${button('Skip Feedback →', 'skip-feedback', 'secondary')}</div></section>`;
+    return `<section class="center-screen feedback-screen"><div class="center-intro"><div class="section-label">A little feedback goes a long way</div><h1>How was your visit?</h1><p class="muted">Tell us about your kiosk experience.</p></div><form id="feedback-form" class="panel" novalidate><fieldset class="feedback-rating" ${f.saving || f.attempt ? 'disabled' : ''}><legend>Rate your experience</legend><div class="rating-options">${['Poor', 'Fair', 'Good', 'Great', 'Excellent'].map((label, i) => `<label class="rating-option"><input type="radio" name="rating" value="${i + 1}" ${f.rating === String(i + 1) ? 'checked' : ''} aria-describedby="feedback-error"><span class="rating-tile"><span class="rating-star" aria-hidden="true">★</span><strong>${i + 1}</strong><small>${label}</small></span></label>`).join('')}</div></fieldset><label class="input-label" for="feedback-comment">Anything else to share? <span class="muted">(optional)</span></label><textarea id="feedback-comment" name="comment" class="feedback-comment" ${f.saving || f.attempt ? 'disabled' : ''} rows="4" maxlength="500" placeholder="What went well? What could be better?" aria-describedby="feedback-help">${escape(f.comment)}</textarea><p id="feedback-help" class="cash-help">Up to 500 characters. Please avoid sharing personal details.</p><div id="feedback-error" class="error" role="alert" ${state.error ? '' : 'hidden'}>${escape(state.error)}</div><button type="submit" class="btn primary wide" ${f.saving ? 'disabled' : ''}>${f.saving ? 'Saving feedback...' : f.attempt ? 'Retry Feedback →' : 'Submit Feedback →'}</button></form><div class="actions">${button('← Back to Receipt', 'feedback-receipt', 'secondary', f.saving ? 'disabled' : '')}${button('Skip Feedback →', 'skip-feedback', 'secondary', f.saving ? 'disabled' : '')}</div></section>`;
   }
-  function submitFeedback(form) {
-    if (state.screen !== 7 || !state.receipt || state.feedback.submitted || state.feedback.skipped) return;
-    const rating = Number(form.elements.rating.value);
-    const comment = form.elements.comment.value.trim();
-    let message = '';
-    if (!Number.isInteger(rating) || rating < 1 || rating > 5) message = 'Choose a rating from 1 to 5 before submitting.';
-    else if (comment.length > 500) message = 'Please keep your comment within 500 characters.';
-    if (!message) {
-      try {
-        const key = 'triple-j-customer-feedback';
-        const saved = JSON.parse(localStorage.getItem(key) || '[]');
-        if (!Array.isArray(saved)) throw new Error('Invalid feedback history');
-        if (!saved.some((entry) => entry && entry.transactionNumber === state.receipt.number)) {
-          saved.push({ transactionNumber: state.receipt.number, rating, comment, date: new Date().toISOString() });
-          localStorage.setItem(key, JSON.stringify(saved));
-        }
-      } catch {
-        message = 'We couldn’t save your feedback on this kiosk. Please try again or skip.';
+  async function submitFeedback(form) {
+    const f=state.feedback;
+    if (state.screen !== 7 || !state.receipt || f.submitted || f.skipped || f.saving) return;
+    if (!f.attempt) {
+      const rating=Number(form.elements.rating.value);
+      const rawComment=form.elements.comment.value;
+      f.rating=form.elements.rating.value; f.comment=rawComment;
+      let message='';
+      if (!Number.isInteger(rating) || rating<1 || rating>5) message='Choose a rating from 1 to 5 before submitting.';
+      else if (rawComment.length>500) message='Please keep your comment within 500 characters.';
+      if (message) {
+        state.error=message;
+        const error=document.getElementById('feedback-error');
+        error.textContent=message;error.hidden=false;error.tabIndex=-1;error.focus();return;
       }
+      f.attempt=Object.freeze({transactionNumber:state.receipt.number,rating,comment:rawComment.trim()});
     }
-    if (message) {
-      state.error = message;
-      const error = document.getElementById('feedback-error');
-      error.textContent = message;
-      error.hidden = false;
-      error.tabIndex = -1;
-      error.focus();
-      return;
-    }
-    state.feedback.submitted = true;
-    state.error = '';
-    render();
+    f.saving=true;state.error='';render(false);
+    try {
+      await KioskAPI.feedback(f.attempt);
+      f.submitted=true; f.attempt=null;
+    } catch (error) {
+      state.error=error.code ? error.message : 'Unable to confirm feedback. Retry to recover your saved submission.';
+      // Keep the original payload when the server may already have saved it.
+      if (['INVALID_FEEDBACK','ORDER_NOT_FOUND'].includes(error.code)) f.attempt=null;
+    } finally {f.saving=false;render(false);}
   }
   function render(focusHeading = true) {
     if (focusHeading) {
@@ -286,7 +280,7 @@
   }
   app.addEventListener('click', (event) => {
     const target = event.target.closest('button[data-action]');
-    if (!target || target.disabled || state.busy) return;
+    if (!target || target.disabled || state.busy || state.feedback.saving) return;
     const action = target.dataset.action,
       id = target.dataset.id;
     if (action === 'retry-catalog') { loadCatalog(); return; }
@@ -363,7 +357,7 @@
     }
   });
   app.addEventListener('input', (event) => {
-    if (state.screen === 7 && !state.feedback.submitted && !state.feedback.skipped) {
+    if (state.screen === 7 && !state.feedback.submitted && !state.feedback.skipped && !state.feedback.saving && !state.feedback.attempt) {
       if (event.target.name === 'rating') state.feedback.rating = event.target.value;
       else if (event.target.id === 'feedback-comment') state.feedback.comment = event.target.value;
       else return;

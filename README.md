@@ -118,5 +118,31 @@ Justin Adam C. Umalay
 Jaymar C. Lomocso
 Jeward N. Mencede
 
+## Vercel hosting
+
+The kiosk frontend is deployed at https://triple-j-pos-kiosk.vercel.app. Its backend remains in the existing Supabase project.
+
+Vercel project settings are committed in `vercel.json`: framework **Other**, build command `node scripts/build.mjs`, install command `npm ci --omit=dev --ignore-scripts`, and output directory `dist`. The build copies only the HTML, CSS, browser JavaScript, public Supabase configuration, and artwork. Database migrations, function source, tests, and environment files are excluded from the public output.
+
+To build locally:
+
+```sh
+node scripts/build.mjs
+```
+
+To recreate the deployment, import this repository in Vercel with the above settings, or deploy its files with the Vercel CLI after explicitly linking the intended account and project. This initial deployment was uploaded directly; it does not configure automatic deployments from GitHub. For a different domain, add its exact HTTPS origin to `KIOSK_ALLOWED_ORIGINS` in Supabase, preserving the local origins you need, then redeploy the Edge Function. The committed default allowlist includes this project's assigned production and initial deployment URLs.
+
+To test the deployed frontend against live Supabase in PowerShell:
+
+```powershell
+$env:KIOSK_DEPLOYMENT_URL='https://triple-j-pos-kiosk.vercel.app'
+npm run test:live:browser
+```
+
+These tests create simulated transactions; use their recorded request IDs for targeted cleanup.
+
+
 ## Customer feedback
-After viewing a receipt, customers can leave a 1–5 rating and an optional comment, or skip feedback. Responses are saved on the current browser under `triple-j-customer-feedback` in localStorage, with the transaction number and submission date. They are not sent to a server.
+After viewing a receipt, customers can leave the existing 1–5 rating and optional comment, or skip feedback. New responses are saved in the private Supabase `customer_feedback` table, linked to their completed order, with the server submission date. View them in the Supabase dashboard under **Table Editor → customer_feedback**. Each order accepts one response. Identical retries recover the saved response; changed requests return a conflict. The form waits for confirmation before thanking the customer and keeps the original submission for safe retries after a network failure. Skipping creates no feedback record. Previous localStorage responses are not automatically imported.
+
+Feedback uses `POST /feedback` on the existing kiosk Edge Function with `{transactionNumber, rating, comment}`. The browser uses only its publishable key; table access and the `kiosk_feedback` database function are restricted to the backend. `tests/feedback.database.sql` verifies validation, replay, duplicate rejection, and role grants inside a rolled-back transaction. Apply the committed `customer_feedback` migration before deploying the updated Edge Function.
