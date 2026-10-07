@@ -117,3 +117,26 @@ Supabase advisors may report informational notices for RLS-enabled `orders` and 
 Justin Adam C. Umalay
 Jaymar C. Lomocso
 Jeward N. Mencede
+
+## Vercel hosting
+
+The kiosk frontend is deployed at https://triple-j-pos-kiosk.vercel.app. Its backend remains in the existing Supabase project.
+
+Vercel project settings are committed in `vercel.json`: framework **Other**, build command `node scripts/build.mjs`, install command `npm ci --omit=dev --ignore-scripts`, and output directory `dist`. The build copies only the HTML, CSS, browser JavaScript, public Supabase configuration, and artwork. Database migrations, function source, tests, and environment files are excluded from the public output.
+
+To build locally:
+
+```sh
+node scripts/build.mjs
+```
+
+To recreate the deployment, import this repository in Vercel with the above settings, or deploy its files with the Vercel CLI after explicitly linking the intended account and project. This initial deployment was uploaded directly; it does not configure automatic deployments from GitHub. For a different domain, add its exact HTTPS origin to `KIOSK_ALLOWED_ORIGINS` in Supabase, preserving the local origins you need, then redeploy the Edge Function. The committed default allowlist includes this project's assigned production and initial deployment URLs.
+
+To test the deployed frontend against live Supabase in PowerShell:
+
+```powershell
+$env:KIOSK_DEPLOYMENT_URL='https://triple-j-pos-kiosk.vercel.app'
+npm run test:live:browser
+```
+
+These tests create simulated transactions; use their recorded request IDs for targeted cleanup.
