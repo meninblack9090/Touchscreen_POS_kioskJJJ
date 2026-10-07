@@ -18,6 +18,28 @@ export function createHandler({ publishableKeys, allowedOrigins, database }) {
         return respond({ products });
       } catch { return error('CATALOG_UNAVAILABLE','Products could not be loaded. Please retry.',503); }
     }
+    if (req.method === 'POST' && path === 'feedback') {
+      let body;
+      try {
+        const text = await req.text();
+        if (text.length > 5000) return error('INVALID_FEEDBACK','Feedback request is too large.',413);
+        body = JSON.parse(text);
+      } catch { return error('INVALID_FEEDBACK','Invalid feedback JSON.',400); }
+      if (!body || typeof body.transactionNumber !== 'string' ||
+          !/^TXN-[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}$/i.test(body.transactionNumber) ||
+          !Number.isInteger(body.rating) || body.rating < 1 || body.rating > 5 ||
+          typeof body.comment !== 'string' || body.comment.length > 500) {
+        return error('INVALID_FEEDBACK','Choose a rating from 1 to 5 and a comment of at most 500 characters.',400);
+      }
+      try {
+        const result = await database('rpc/kiosk_feedback', {method:'POST',body:{
+          p_transaction_number:body.transactionNumber.toUpperCase(),p_rating:body.rating,p_comment:body.comment.trim()
+        }});
+        if (!result.ok) return error(result.code,result.message,
+          result.code === 'ORDER_NOT_FOUND' ? 404 : result.code === 'FEEDBACK_CONFLICT' ? 409 : 400);
+        return respond({feedback:result.feedback});
+      } catch { return error('FEEDBACK_UNCERTAIN','Unable to confirm feedback. Retry to recover your saved submission.',503); }
+    }
     if (req.method !== 'POST' || path !== 'checkout') return error('NOT_FOUND','Unknown kiosk endpoint.',404);
     let body;
     try {

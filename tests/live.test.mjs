@@ -32,3 +32,18 @@ test('public key cannot read or write orders or invoke privileged RPCs',async()=
   const products=await fetch(url+'/rest/v1/products?select=id',{headers});assert.equal(products.status,200);
 });
 test('live function requires the publishable key',async()=>{const r=await fetch(url+'/functions/v1/kiosk/products');assert.equal(r.status,401);});
+
+test('live feedback validates, saves once on concurrent retry, and denies public access',async()=>{
+ const created=await call(payload());assert.equal(created.status,200);
+ const body={transactionNumber:created.data.receipt.number,rating:5,comment:'Automated feedback integration test'};
+ for(const extra of [{rating:0},{rating:6},{rating:2.5},{rating:'5'},{rating:null},{comment:'x'.repeat(501)},{comment:null}])assert.equal((await call({...body,...extra},'feedback')).status,400);
+ const unknown=await call({...body,transactionNumber:'TXN-'+randomUUID().toUpperCase()},'feedback');assert.equal(unknown.status,404);
+ const responses=await Promise.all(Array.from({length:4},()=>call(body,'feedback')));
+ for(const r of responses){assert.equal(r.status,200);assert.equal(r.data.feedback.rating,5);assert.equal(r.data.feedback.comment,body.comment);assert.equal(r.data.feedback.transactionNumber,body.transactionNumber);assert.deepEqual(r.data.feedback,responses[0].data.feedback);}
+ assert.equal((await call({...body,rating:4},'feedback')).status,409);
+ assert.equal((await call({...body,comment:'Changed'},'feedback')).status,409);
+ for(const method of ['GET','POST','PATCH','DELETE']) {
+  const r=await fetch(url+'/rest/v1/customer_feedback?order_id=eq.'+body.transactionNumber.slice(4),{method,headers,...(method!=='GET'&&method!=='DELETE'&&{body:JSON.stringify({rating:4})})});assert.ok([401,403].includes(r.status),'Public '+method+' feedback access was allowed');
+ }
+ const rpc=await fetch(url+'/rest/v1/rpc/kiosk_feedback',{method:'POST',headers,body:JSON.stringify({p_transaction_number:body.transactionNumber,p_rating:5,p_comment:body.comment})});assert.ok([401,403,404].includes(rpc.status));
+});

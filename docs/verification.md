@@ -31,3 +31,11 @@ The full API and browser suites passed after the fixes, and all four actual live
 - Intentionally retained RLS without public policies for the private order tables. Advisors report informational notices for these tables and the newly created foreign-key index; public data-access tests confirm the intended restrictions.
 
 The review set aside real payment-provider verification, operator authentication, and recovery after closing a tab because the approved activity uses simulated public kiosk checkout and tab-session recovery. README setup and API documentation were checked separately after completion. Recovery information survives page reload while browser session storage remains available; tab closure is outside this design.
+
+## Customer feedback verification
+
+The existing feedback form from commit `6381b4f` is preserved. The backend integration adds a private `customer_feedback` table and `kiosk_feedback` RPC, with one response per completed order. The deployed Edge Function validates receipt references, integer ratings 1–5, and optional comments up to 500 characters. Identical concurrent retries return the original server response; changed submissions conflict.
+
+Validation completed: 30 handler tests, 21 browser tests, 23 live API tests, and 6 live browser tests. The rolled-back `tests/feedback.database.sql` checks invalid inputs, unknown receipts, empty and 500-character comments, replay, duplicates, RLS, and anon/authenticated privileges. The live API checks denied public table reads, inserts, updates, deletes, and direct RPC execution. Live browser checks exercise saved feedback and recovery after a real successful response is deliberately lost.
+
+Supabase security advisors reported only the expected informational [RLS enabled without policies](https://supabase.com/docs/guides/database/database-linter?lint=0008_rls_enabled_no_policy) notices on private orders, items, and feedback. The performance advisor reported the existing informational [unused foreign-key index](https://supabase.com/docs/guides/database/database-linter?lint=0005_unused_index) notice. No warning or error findings were reported.
