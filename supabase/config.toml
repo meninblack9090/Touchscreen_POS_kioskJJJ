@@ -1,0 +1,5 @@
+project_id = "Touchscreen_POS_kioskJJJ"
+
+[functions.kiosk]
+# Publishable keys are checked inside handler.js, rather than parsed as JWTs.
+verify_jwt = false

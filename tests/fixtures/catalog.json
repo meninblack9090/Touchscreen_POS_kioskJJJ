@@ -1,0 +1,66 @@
+[
+  {
+    "id": "coffee",
+    "name": "Coffee",
+    "price": 4500,
+    "color": "#eee5d7",
+    "description": "Your daily pick-me-up",
+    "category": "Drink"
+  },
+  {
+    "id": "sandwich",
+    "name": "Sandwich",
+    "price": 5000,
+    "color": "#edf0dc",
+    "description": "A little lunch-time fuel",
+    "category": "Food"
+  },
+  {
+    "id": "soda",
+    "name": "Soft Drink",
+    "price": 3500,
+    "color": "#f6e1d8",
+    "description": "Chilled & refreshing",
+    "category": "Drink"
+  },
+  {
+    "id": "cookies",
+    "name": "Cookies",
+    "price": 2500,
+    "color": "#f3e7d3",
+    "description": "A sweet study companion",
+    "category": "Food"
+  },
+  {
+    "id": "water",
+    "name": "Bottled Water",
+    "price": 2000,
+    "color": "#e0ecec",
+    "description": "Stay hydrated, stay focused",
+    "category": "Drink"
+  },
+  {
+    "id": "chocolate",
+    "name": "Chocolate",
+    "price": 2500,
+    "color": "#ebe0db",
+    "description": "For your well-earned break",
+    "category": "Food"
+  },
+  {
+    "id": "notebook",
+    "name": "Campus Notebook",
+    "price": 6500,
+    "color": "#e4e8f0",
+    "description": "Big ideas start here",
+    "category": "Merchandise"
+  },
+  {
+    "id": "pen",
+    "name": "Ballpoint Pen",
+    "price": 1500,
+    "color": "#eee6ed",
+    "description": "Ready for the next lecture",
+    "category": "Merchandise"
+  }
+]

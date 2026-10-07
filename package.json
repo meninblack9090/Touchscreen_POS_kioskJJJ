@@ -1,0 +1,16 @@
+{
+  "name": "triple-j-kiosk",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "node scripts/serve.mjs",
+    "test": "node --test tests/handler.test.mjs",
+    "test:browser": "playwright test",
+    "test:live": "node --test tests/live.test.mjs",
+    "test:live:browser": "playwright test -c playwright.live.config.mjs"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.63.0",
+    "supabase": "2.120.0"
+  }
+}
