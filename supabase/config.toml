@@ -1,5 +1,0 @@
-project_id = "Touchscreen_POS_kioskJJJ"
-
-[functions.checkout]
-# Guest activity checkout validates the project's publishable API key in the handler.
-verify_jwt = false
