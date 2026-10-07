@@ -32,6 +32,7 @@
     method: null,
     cash: '',
     receipt: null,
+    feedback: { rating: '', comment: '', submitted: false, skipped: false },
     busy: false,
     error: '',
     timer: null,
@@ -120,7 +121,47 @@
   }
   function receipt() {
     const r = state.receipt;
-    return `<section class="center-screen"><div class="center-intro"><div class="section-label">Thanks for stopping by</div><h1>Your digital receipt</h1><p class="muted">A little record of a good campus day.</p></div><article class="panel receipt" aria-label="Digital receipt"><div class="receipt-top"><h2>campus corner.</h2><p class="muted">Campus Food & Merchandise Outlet</p><p class="receipt-meta">Transaction No.<br><strong class="reference">${escape(r.number)}</strong><br><br>Date: ${escape(new Date(r.date).toLocaleString('en-PH', { dateStyle: 'medium', timeStyle: 'short' }))}</p></div><div class="section-label">Purchased items</div><div class="receipt-items">${summaryRows(r.items)}</div><div class="cart-total"><span>Total</span><strong>${money(r.total)}</strong></div><dl class="details"><div class="detail"><dt>Payment method</dt><dd>${escape(r.method)}</dd></div><div class="detail"><dt>Amount paid</dt><dd>${money(r.paid)}</dd></div><div class="detail"><dt>Change</dt><dd>${money(r.change)}</dd></div><div class="detail"><dt>Status</dt><dd class="success-text">Payment Successful</dd></div></dl><p class="receipt-thanks">Thanks for supporting your campus store.<br>See you on your next break!</p></article><div class="actions receipt-actions">${button('New Transaction →', 'reset', 'primary wide')}</div></section>`;
+    return `<section class="center-screen"><div class="center-intro"><div class="section-label">Thanks for stopping by</div><h1>Your digital receipt</h1><p class="muted">A little record of a good campus day.</p></div><article class="panel receipt" aria-label="Digital receipt"><div class="receipt-top"><h2>campus corner.</h2><p class="muted">Campus Food & Merchandise Outlet</p><p class="receipt-meta">Transaction No.<br><strong class="reference">${escape(r.number)}</strong><br><br>Date: ${escape(new Date(r.date).toLocaleString('en-PH', { dateStyle: 'medium', timeStyle: 'short' }))}</p></div><div class="section-label">Purchased items</div><div class="receipt-items">${summaryRows(r.items)}</div><div class="cart-total"><span>Total</span><strong>${money(r.total)}</strong></div><dl class="details"><div class="detail"><dt>Payment method</dt><dd>${escape(r.method)}</dd></div><div class="detail"><dt>Amount paid</dt><dd>${money(r.paid)}</dd></div><div class="detail"><dt>Change</dt><dd>${money(r.change)}</dd></div><div class="detail"><dt>Status</dt><dd class="success-text">Payment Successful</dd></div></dl><p class="receipt-thanks">Thanks for supporting your campus store.<br>See you on your next break!</p></article><div class="actions receipt-actions">${button('Leave Feedback →', 'feedback', 'primary wide')}${button('New Transaction →', 'reset', 'secondary wide')}</div></section>`;
+  }
+  function feedback() {
+    const f = state.feedback;
+    if (f.submitted || f.skipped) {
+      return `<section class="center-screen feedback-screen"><div class="center-intro"><div class="success-mark" aria-hidden="true">✓</div><div class="section-label">See you next time</div><h1>${f.submitted ? 'Thanks for your feedback!' : 'Thanks for stopping by!'}</h1><p class="muted">${f.submitted ? 'Your thoughts help make every campus visit a little better.' : 'Enjoy your order and have a great campus day.'}</p></div><div class="actions">${button('New Transaction →', 'reset', 'primary wide')}</div></section>`;
+    }
+    return `<section class="center-screen feedback-screen"><div class="center-intro"><div class="section-label">A little feedback goes a long way</div><h1>How was your visit?</h1><p class="muted">Tell us about your kiosk experience.</p></div><form id="feedback-form" class="panel" novalidate><fieldset class="feedback-rating"><legend>Rate your experience</legend><div class="rating-options">${['Poor', 'Fair', 'Good', 'Great', 'Excellent'].map((label, i) => `<label class="rating-option"><input type="radio" name="rating" value="${i + 1}" ${f.rating === String(i + 1) ? 'checked' : ''} aria-describedby="feedback-error"><span class="rating-tile"><span class="rating-star" aria-hidden="true">★</span><strong>${i + 1}</strong><small>${label}</small></span></label>`).join('')}</div></fieldset><label class="input-label" for="feedback-comment">Anything else to share? <span class="muted">(optional)</span></label><textarea id="feedback-comment" name="comment" class="feedback-comment" rows="4" maxlength="500" placeholder="What went well? What could be better?" aria-describedby="feedback-help">${escape(f.comment)}</textarea><p id="feedback-help" class="cash-help">Up to 500 characters. Please avoid sharing personal details.</p><div id="feedback-error" class="error" role="alert" ${state.error ? '' : 'hidden'}>${escape(state.error)}</div><button type="submit" class="btn primary wide">Submit Feedback →</button></form><div class="actions">${button('← Back to Receipt', 'feedback-receipt', 'secondary')}${button('Skip Feedback →', 'skip-feedback', 'secondary')}</div></section>`;
+  }
+  function submitFeedback(form) {
+    if (state.screen !== 7 || !state.receipt || state.feedback.submitted || state.feedback.skipped) return;
+    const rating = Number(form.elements.rating.value);
+    const comment = form.elements.comment.value.trim();
+    let message = '';
+    if (!Number.isInteger(rating) || rating < 1 || rating > 5) message = 'Choose a rating from 1 to 5 before submitting.';
+    else if (comment.length > 500) message = 'Please keep your comment within 500 characters.';
+    if (!message) {
+      try {
+        const key = 'triple-j-customer-feedback';
+        const saved = JSON.parse(localStorage.getItem(key) || '[]');
+        if (!Array.isArray(saved)) throw new Error('Invalid feedback history');
+        if (!saved.some((entry) => entry && entry.transactionNumber === state.receipt.number)) {
+          saved.push({ transactionNumber: state.receipt.number, rating, comment, date: new Date().toISOString() });
+          localStorage.setItem(key, JSON.stringify(saved));
+        }
+      } catch {
+        message = 'We couldn’t save your feedback on this kiosk. Please try again or skip.';
+      }
+    }
+    if (message) {
+      state.error = message;
+      const error = document.getElementById('feedback-error');
+      error.textContent = message;
+      error.hidden = false;
+      error.tabIndex = -1;
+      error.focus();
+      return;
+    }
+    state.feedback.submitted = true;
+    state.error = '';
+    render();
   }
   function render(focusHeading = true) {
     if (focusHeading) {
@@ -129,12 +170,13 @@
       toast.hidden = true;
       toast.textContent = '';
     }
-    const group = state.screen <= 2 ? state.screen : state.screen <= 4 ? 3 : 4;
+    const group = state.screen <= 2 ? state.screen : state.screen <= 4 ? 3 : state.screen <= 6 ? 4 : 5;
     document.getElementById('progress').innerHTML = [
       'Select items',
       'Review order',
       'Payment',
       'Receipt',
+      'Feedback',
     ]
       .map(
         (label, i) =>
@@ -143,7 +185,7 @@
       .join('');
     app.innerHTML = (catalogLoading || catalogError) && !state.attempt && state.screen <= 2
       ? '<section class="center-screen"><div class="panel"><h1>' + (catalogLoading ? 'Loading products...' : 'Products unavailable') + '</h1><p role="status">' + escape(catalogError || 'Connecting to the campus store.') + '</p>' + (catalogError ? button('Retry Loading Products →', 'retry-catalog', 'primary wide') : '') + '</div></section>'
-      : [selection, summary, methods, payment, success, receipt][state.screen - 1]();
+      : [selection, summary, methods, payment, success, receipt, feedback][state.screen - 1]();
     if (focusHeading) {
       const heading = app.querySelector('h1');
       heading.tabIndex = -1;
@@ -302,7 +344,14 @@
           finish(total());
       }, 1400);
     } else if (action === 'receipt' && state.screen === 5 && state.receipt) navigate(6);
-    else if (action === 'reset' && state.screen === 6) {
+    else if (action === 'feedback' && state.screen === 6 && state.receipt) navigate(7);
+    else if (action === 'feedback-receipt' && state.screen === 7 && !state.feedback.submitted && !state.feedback.skipped) navigate(6);
+    else if (action === 'skip-feedback' && state.screen === 7 && !state.feedback.submitted && !state.feedback.skipped) {
+      state.feedback.skipped = true;
+      state.error = '';
+      render();
+    }
+    else if (action === 'reset' && [6, 7].includes(state.screen)) {
       clearTimeout(state.timer);
       clearTimeout(toastTimer);
       clearAttempt();
@@ -314,6 +363,16 @@
     }
   });
   app.addEventListener('input', (event) => {
+    if (state.screen === 7 && !state.feedback.submitted && !state.feedback.skipped) {
+      if (event.target.name === 'rating') state.feedback.rating = event.target.value;
+      else if (event.target.id === 'feedback-comment') state.feedback.comment = event.target.value;
+      else return;
+      state.error = '';
+      const error = document.getElementById('feedback-error');
+      error.hidden = true;
+      error.textContent = '';
+      return;
+    }
     if (event.target.id !== 'cash' || state.screen !== 4 || state.method !== 'Cash' || state.busy || state.uncertain) return;
     state.cash = event.target.value;
     state.error = '';
@@ -324,6 +383,11 @@
     document.getElementById('change-preview').textContent = previewChange();
   });
   app.addEventListener('submit', (event) => {
+    if (event.target.id === 'feedback-form') {
+      event.preventDefault();
+      submitFeedback(event.target);
+      return;
+    }
     if (event.target.id !== 'cash-form') return;
     event.preventDefault();
     if (state.screen !== 4 || state.method !== 'Cash' || state.busy || state.uncertain || !count()) return;
