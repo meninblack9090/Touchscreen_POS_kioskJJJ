@@ -117,3 +117,6 @@ Supabase advisors may report informational notices for RLS-enabled `orders` and 
 Justin Adam C. Umalay
 Jaymar C. Lomocso
 Jeward N. Mencede
+
+## Customer feedback
+After viewing a receipt, customers can leave a 1–5 rating and an optional comment, or skip feedback. Responses are saved on the current browser under `triple-j-customer-feedback` in localStorage, with the transaction number and submission date. They are not sent to a server.
